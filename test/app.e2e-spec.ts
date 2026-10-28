@@ -18,8 +18,10 @@
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
+import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter';
 
 describe('Payment Flow (e2e)', () => {
   let app: INestApplication;
@@ -38,6 +40,8 @@ describe('Payment Flow (e2e)', () => {
         transform: true,
       }),
     );
+    app.useGlobalInterceptors(new TransformInterceptor());
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
   });
 

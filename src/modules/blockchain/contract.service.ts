@@ -93,6 +93,26 @@ export class ContractService implements OnModuleInit {
       '',
     );
 
+    if (!this.contractAddress) {
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        // Resolve relative to the project root (process.cwd()) so the paths
+        // work both in local development and inside the Docker container,
+        // regardless of where the compiled JavaScript lives.
+        const txtPath = path.resolve(process.cwd(), 'artifacts/deployed-address.txt');
+        const jsonPath = path.resolve(process.cwd(), 'contracts/deployed-address.json');
+        if (fs.existsSync(txtPath)) {
+          this.contractAddress = fs.readFileSync(txtPath, 'utf8').trim();
+        } else if (fs.existsSync(jsonPath)) {
+          const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+          this.contractAddress = data.address?.trim() || '';
+        }
+      } catch (err) {
+        this.logger.debug(`Could not read address from file fallback: ${err}`);
+      }
+    }
+
     if (this.contractAddress) {
       try {
         await this.initializeContract();

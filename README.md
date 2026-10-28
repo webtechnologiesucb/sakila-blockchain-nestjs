@@ -23,35 +23,44 @@
 
 ---
 
-## 🚀 Inicio Rápido — Para Ejecutar el Proyecto
+## 🚀 Inicio Rápido con Docker (Recomendado — Todo en 1 Paso)
+
+Puedes levantar todo el ecosistema completo (**Base de Datos PostgreSQL + Sakila**, **Blockchain Ganache**, **Backend NestJS con auto-despliegue del Smart Contract** y el **Frontend interactivo en Svelte 5**) con un solo comando:
+
+```bash
+# Levantar todos los servicios en contenedores Docker:
+docker compose up --build
+```
+
+Una vez levantados los servicios:
+- 🌐 **Frontend Svelte (Dashboard Interactivo)**: [http://localhost:5173](http://localhost:5173)
+- 📖 **Documentación Swagger API**: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+- 🔗 **API REST Backend**: [http://localhost:3000/api/v1](http://localhost:3000/api/v1)
+- ⛓️ **RPC Ganache (Ethereum Testnet)**: `http://localhost:8545` (o `7545`)
+- 🐘 **PostgreSQL (Sakila)**: `localhost:5432` (usuario: `postgres`, base de datos: `sakila`)
+
+---
+
+## 💻 Inicio Rápido Local (Sin Docker)
 
 ```bash
 # 1. Iniciar Ganache (blockchain local de Ethereum)
 npx ganache --chain.chainId 1337 --wallet.deterministic
 
-# 2. Ejecutar las migraciones de base de datos en tu BD MySQL/Sakila
-mysql -u root -p sakila < database/migrations/001_create_payment_blockchain.sql
-mysql -u root -p sakila < database/migrations/002_create_qr_payment_requests.sql
+# 2. Las tablas de PostgreSQL se inicializan desde database/init/*.sql
 
 # 3. Compilar y desplegar el contrato inteligente en Ganache
 npx hardhat compile
 npx hardhat run contracts/scripts/deploy.ts --network ganache
 
-# 4. Configurar las variables de entorno en .env
-#    - Establecer PAYMENT_CONTRACT_ADDRESS=<dirección del paso 3>
-#    - Establecer DB_PASSWORD=<tu contraseña de MySQL>
-#    - Verificar que GANACHE_RPC_URL y GANACHE_CHAIN_ID coincidan con tu instancia de Ganache
-
-# 5. Iniciar el servidor de desarrollo NestJS
+# 4. Iniciar el backend NestJS
 npm run start:dev
 
-# 6. Abrir la documentación API de Swagger
-#    http://localhost:3000/api/docs
+# 5. Iniciar el frontend de Svelte
+cd frontend
+npm install
+npm run dev
 ```
-
-> **Nota:** Si usas **Ganache GUI** en lugar de CLI, actualiza `.env` con la configuración de tu Ganache GUI:
-> - `GANACHE_RPC_URL=http://127.0.0.1:7545`
-> - `GANACHE_CHAIN_ID=5777`
 
 ---
 

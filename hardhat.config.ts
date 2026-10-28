@@ -22,13 +22,12 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    // Local Ganache network configuration
     ganache: {
-      url: 'http://127.0.0.1:7545',
-      chainId: 1337,
-      // Ganache default accounts (first 3 for convenience)
+      url: process.env.GANACHE_RPC_URL || 'http://127.0.0.1:8545',
+      chainId: parseInt(process.env.GANACHE_CHAIN_ID || '1337', 10),
       accounts: [
-        '0xa473ac71bac13c808d2550e6a08eb63c0cb560b5174c1d8b49911d9c51c9cf23',
+        process.env.DEPLOYER_PRIVATE_KEY ||
+          '0xa473ac71bac13c808d2550e6a08eb63c0cb560b5174c1d8b49911d9c51c9cf23',
       ],
     },
     // Hardhat's built-in network (for testing without Ganache)

@@ -1,0 +1,104 @@
+services:
+  # =============================================================
+  # 1. Base de Datos: PostgreSQL (Sakila Schema + Seed Data)
+  # =============================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: sakila-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_DATABASE:-sakila}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-sakila}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sakila-network
+
+  # =============================================================
+  # 2. Blockchain: Ganache (Ethereum Local Testnet)
+  # =============================================================
+  ganache:
+    image: trufflesuite/ganache:v7.9.2
+    container_name: sakila-ganache
+    restart: unless-stopped
+    command: >
+      --chain.chainId 1337
+      --chain.networkId 1337
+      --server.host 0.0.0.0
+      --server.port 8545
+      --wallet.mnemonic "myth like bonus scare over problem client lizard pioneer submit female collect"
+      --wallet.accounts "0xa473ac71bac13c808d2550e6a08eb63c0cb560b5174c1d8b49911d9c51c9cf23,1000000000000000000000"
+    ports:
+      - "8545:8545"
+      - "7545:8545"
+    networks:
+      - sakila-network
+
+  # =============================================================
+  # 3. Backend: NestJS (API REST + Smart Contract + Sync)
+  # =============================================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sakila-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ganache:
+        condition: service_started
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_DATABASE: ${DB_DATABASE:-sakila}
+      GANACHE_RPC_URL: http://ganache:8545
+      GANACHE_CHAIN_ID: 1337
+      DEPLOYER_PRIVATE_KEY: ${DEPLOYER_PRIVATE_KEY:-0xa473ac71bac13c808d2550e6a08eb63c0cb560b5174c1d8b49911d9c51c9cf23}
+      PAYMENT_CONTRACT_ADDRESS: ${PAYMENT_CONTRACT_ADDRESS:-}
+      APP_PORT: 3000
+      APP_NAME: Sakila Blockchain Integration
+      QR_EXPIRATION_MINUTES: 30
+      SYNC_INTERVAL_MS: 30000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./artifacts:/usr/src/app/artifacts
+      - ./contracts:/usr/src/app/contracts
+    networks:
+      - sakila-network
+
+  # =============================================================
+  # 4. Frontend: Svelte 5 + Nginx (Dashboard Interactivo)
+  # =============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sakila-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+    networks:
+      - sakila-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  sakila-network:
+    driver: bridge

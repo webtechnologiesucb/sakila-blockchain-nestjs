@@ -39,6 +39,23 @@ async function main(): Promise<void> {
   console.log(`   Contract address: ${contractAddress}`);
   console.log(`   Transaction hash: ${contract.deploymentTransaction()?.hash}`);
 
+  // Save address to file for automated environments
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const outDir = path.resolve(__dirname, '../../artifacts');
+    if (!fs.existsSync(outDir)) {
+      fs.mkdirSync(outDir, { recursive: true });
+    }
+    fs.writeFileSync(path.join(outDir, 'deployed-address.txt'), contractAddress.trim());
+    fs.writeFileSync(
+      path.resolve(__dirname, '../deployed-address.json'),
+      JSON.stringify({ address: contractAddress.trim(), deployedAt: new Date().toISOString() }, null, 2),
+    );
+  } catch (err) {
+    console.warn('Could not save contract address to file:', err);
+  }
+
   // Verify deployment
   const owner = await contract.owner();
   console.log(`   Contract owner  : ${owner}`);
